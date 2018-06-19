@@ -31,10 +31,10 @@
     function Tree() {
         // --------------------------------------------------------------------------------------------- Tree properties
         var config = {
-                unitSize : 50,
+                unitSize : 25,
                 trunk : {
                     width  : { min : 1, max : 1 },
-                    height : { min : 1, max : 2 },
+                    height : { min : 3, max : 5 },
                     color  : {
                         r : { min : 100, max : 150 },
                         g : { min : 63,  max : 63 },
@@ -43,7 +43,7 @@
                     }
                 },
                 crown : {
-                    width  : { min : 3, max : 3 },
+                    width  : { min : 4, max : 6 },
                     height : { min : 1, max : 1 },
                     color  : {
                         r : { min : 63,  max : 63 },
@@ -54,6 +54,7 @@
                 }
             },
             properties = {
+                unitSize : 0,
                 trunk : {
                     width  : 0,
                     height : 0,
@@ -78,6 +79,7 @@
 
         // ---------------------------------------------------------------------------------------- Computing properties
 
+        properties.unitSize      = config.unitSize;
         properties.trunk.width   = getValueBetween(config.trunk.width.min,   config.trunk.width.max)  * config.unitSize;
         properties.trunk.height  = getValueBetween(config.trunk.height.min,  config.trunk.height.max) * config.unitSize;
         properties.trunk.color.r = getValueBetween(config.trunk.color.r.min, config.trunk.color.r.max);
@@ -86,7 +88,7 @@
         properties.trunk.color.a = getValueBetween(config.trunk.color.a.min, config.trunk.color.a.max);
 
         properties.crown.width   = getValueBetween(config.crown.width.min,   config.crown.width.max)  * config.unitSize;
-        properties.crown.heigth  = getValueBetween(config.crown.height.min,  config.crown.height.max) * config.unitSize;
+        properties.crown.height  = getValueBetween(config.crown.height.min,  config.crown.height.max) * config.unitSize;
         properties.crown.color.r = getValueBetween(config.crown.color.r.min, config.crown.color.r.max);
         properties.crown.color.g = getValueBetween(config.crown.color.g.min, config.crown.color.g.max);
         properties.crown.color.b = getValueBetween(config.crown.color.b.min, config.crown.color.b.max);
@@ -108,6 +110,21 @@
 
 
         /**
+         * Returns the rgba-color string of the given color computed with the given lightning percentage.
+         *
+         * @param   {Object} color - {r, g, b, a}
+         * @param   {Number} lighting - Percentage number to compute with the base color
+         * @returns {String} 'rgba(r, g, b, a)'
+         */
+        function getRgbColor(color, lighting) {
+            return 'rgba('+
+                Math.round(color.r + (2.55 * lighting)) + ', ' +
+                Math.round(color.g + (2.55 * lighting)) + ', ' +
+                Math.round(color.b + (2.55 * lighting)) + ', ' +
+                color.a + ')';
+        }
+
+        /**
          * Renders the complete tree.
          *
          * @param ctx
@@ -115,46 +132,35 @@
          * @param y
          */
         function renderTree(ctx, x, y) {
+            var amount = properties.crown.width / properties.unitSize,
+                i;
 
             // -------------------------------------------------------------------------------------------- Render trunk
-            /* Der Baumstamm wird als Recheck gezeichnet und ist ausschließlich der senkrechte Teil. lles Andere, wie
-             * z.B. Äste, werden hier nicht berücksichtigt, das ist Teil des Branch-Abschnitts.
-             */
-/*
+
             ctx.beginPath();
             ctx.moveTo(x - (properties.trunk.width / 2), y);                            // Ecke links unten
             ctx.lineTo(x - (properties.trunk.width / 2), y - properties.trunk.height);  // Seite links
             ctx.lineTo(x + (properties.trunk.width / 2), y - properties.trunk.height);  // Seite oben
-            ctx.lineTo(x + (properties.trunk.width / 2), y);                            // Seite oben
-            ctx.lineTo(x - (properties.trunk.width / 2), y);                            // Seite oben
-            ctx.fillStyle = 'rgba(' + properties.trunk.color.r + ',' + properties.trunk.color.g + ',' + properties.trunk.color.b + ',' + properties.trunk.color.a + ')';
-            ctx.fill();
-            ctx.closePath();*/
-
-            // -------------------------------------------------------------------------------------------- Render crown
-
-            ctx.beginPath();
-            ctx.moveTo(x - (properties.crown.width / 2), y - properties.trunk.height);                               // Ecke links unten
-            ctx.lineTo(x - (properties.crown.width / 2), y - properties.crown.height);   // Seite links
-            ctx.lineTo(x + (properties.crown.width / 2), y - properties.crown.height);   // Seite oben
-            ctx.lineTo(x + (properties.crown.width / 2), y - properties.trunk.height);   // Seite rechts
-            ctx.lineTo(x - (properties.crown.width / 2), y - properties.trunk.height);   // Seite unten
-
-
-
-            ctx.fillStyle = 'rgba(' + properties.crown.color.r + ',' + properties.crown.color.g + ',' + properties.crown.color.b + ',' + properties.crown.color.a + ')';
+            ctx.lineTo(x + (properties.trunk.width / 2), y);                            // Seite rechts
+            ctx.lineTo(x - (properties.trunk.width / 2), y);                            // Seite unten
+            ctx.fillStyle = getRgbColor(properties.trunk.color, 0);
             ctx.fill();
             ctx.closePath();
 
-            console.log(x, y);
-            console.log(x - (properties.crown.width / 2), y - properties.trunk.height);
-            console.log(x - (properties.crown.width / 2), y - properties.crown.height);
+            // -------------------------------------------------------------------------------------------- Render crown
 
+            for (i = 0; i < amount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(x - ( (properties.crown.width - (properties.unitSize * i) ) / 2 ), (y - properties.trunk.height) - (properties.unitSize * (i)     )); // Ecke links unten
+                ctx.lineTo(x - ( (properties.crown.width - (properties.unitSize * i) ) / 2 ), (y - properties.trunk.height) - (properties.unitSize * (i + 1) )); // Seite links
+                ctx.lineTo(x + ( (properties.crown.width - (properties.unitSize * i) ) / 2 ), (y - properties.trunk.height) - (properties.unitSize * (i + 1) )); // Seite oben
+                ctx.lineTo(x + ( (properties.crown.width - (properties.unitSize * i) ) / 2 ), (y - properties.trunk.height) - (properties.unitSize * (i)     )); // Seite rechts
+                ctx.lineTo(x - ( (properties.crown.width - (properties.unitSize * i) ) / 2 ), (y - properties.trunk.height) - (properties.unitSize * (i)     )); // Seite unten
 
-            // ----------------------------------------------------------------------------------------- Renter branches
-
-            // ------------------------------------------------------------------------------------------- Renter leaves
-
+                ctx.fillStyle = getRgbColor(properties.crown.color, 2 * i);
+                ctx.fill();
+                ctx.closePath();
+            }
         }
 
         // ------------------------------------------------------------------------------------------------------ Return
